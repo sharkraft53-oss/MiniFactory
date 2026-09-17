@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7caebed4c789a5144b3e325194d82521, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: Assembly-CSharp::MiniFactory.Config.GameConfig
+  startingBalance: 1000
+  machines:
+  - id: machine_01
+    displayName: Machine 1
+    unlockedByDefault: 1
+    startLevel: 1
+    baseProductionPerSecond: 1
+    unlockCost: 0
+    baseUpgradeCost: 25
+    upgradeCostMultiplier: 1.5
+  - id: machine_02
+    displayName: Machine 2
+    unlockedByDefault: 0
+    startLevel: 1
+    baseProductionPerSecond: 5
+    unlockCost: 150
+    baseUpgradeCost: 100
+    upgradeCostMultiplier: 1.6
+  - id: machine_03
+    displayName: Machine 3
+    unlockedByDefault: 0
+    startLevel: 1
+    baseProductionPerSecond: 15
+    unlockCost: 750
+    baseUpgradeCost: 400
+    upgradeCostMultiplier: 1.7
+  boost:
+    enabled: 1
+    durationSeconds: 20
+    multiplier: 2
+  maxOfflineSeconds: 14400
+  smallCoinsPackAmount: 5000
