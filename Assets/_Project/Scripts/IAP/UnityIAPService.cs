@@ -8,7 +8,6 @@ namespace MiniFactory.IAP
     public class UnityIAPService : IIAPService
     {
         private StoreController _storeController;
-
         private string _lastRequestedProductId;
 
         public bool IsInitialized { get; private set; }
@@ -16,7 +15,6 @@ namespace MiniFactory.IAP
         public event Action<string> PurchaseSucceeded;
         public event Action<string, string> PurchaseFailed;
         public event Action<string> InitializationFailed;
-
 
         public async void Initialize()
         {
@@ -35,23 +33,6 @@ namespace MiniFactory.IAP
                 );
 
                 await _storeController.Connect();
-
-                Debug.Log(
-                    "[IAP] Store connected."
-                );
-
-                var products =
-                    new List<ProductDefinition>
-                    {
-                        new ProductDefinition(
-                            IAPProductIds.CoinsPackSmall,
-                            ProductType.Consumable
-                        )
-                    };
-
-                _storeController.FetchProducts(
-                    products
-                );
             }
             catch (Exception exception)
             {
@@ -61,14 +42,12 @@ namespace MiniFactory.IAP
             }
         }
 
-
-        public void BuyProduct(
-            string productId)
+        public void BuyProduct(string productId)
         {
             if (!IsInitialized ||
                 _storeController == null)
             {
-                string message =
+                const string message =
                     "IAP is not initialized.";
 
                 Debug.LogWarning(
@@ -95,9 +74,11 @@ namespace MiniFactory.IAP
             );
         }
 
-
         private void SubscribeEvents()
         {
+            _storeController.OnStoreConnected +=
+                OnStoreConnected;
+
             _storeController.OnStoreDisconnected +=
                 OnStoreDisconnected;
 
@@ -116,10 +97,52 @@ namespace MiniFactory.IAP
             _storeController.OnPurchasePending +=
                 OnPurchasePending;
 
+            _storeController.OnPurchaseConfirmed +=
+                OnPurchaseConfirmed;
+
+            _storeController.OnPurchaseDeferred +=
+                OnPurchaseDeferred;
+
             _storeController.OnPurchaseFailed +=
                 OnPurchaseFailed;
         }
 
+        private void OnStoreConnected()
+        {
+            Debug.Log(
+                "[IAP] Store connected successfully."
+            );
+
+            var products =
+                new List<ProductDefinition>
+                {
+                    new ProductDefinition(
+                        IAPProductIds.CoinsPackSmall,
+                        ProductType.Consumable
+                    )
+                };
+
+            _storeController.FetchProducts(
+                products
+            );
+        }
+
+        private void OnStoreDisconnected(
+            StoreConnectionFailureDescription failure)
+        {
+            IsInitialized = false;
+
+            string message =
+                failure.ToString();
+
+            Debug.LogWarning(
+                $"[IAP] Store disconnected: {message}"
+            );
+
+            HandleInitializationFailure(
+                message
+            );
+        }
 
         private void OnProductsFetched(
             List<Product> products)
@@ -141,6 +164,15 @@ namespace MiniFactory.IAP
             _storeController.FetchPurchases();
         }
 
+        private void OnProductsFetchFailed(
+            ProductFetchFailed failure)
+        {
+            IsInitialized = false;
+
+            HandleInitializationFailure(
+                failure.ToString()
+            );
+        }
 
         private void OnPurchasesFetched(
             Orders orders)
@@ -150,6 +182,13 @@ namespace MiniFactory.IAP
             );
         }
 
+        private void OnPurchasesFetchFailed(
+            PurchasesFetchFailureDescription failure)
+        {
+            Debug.LogWarning(
+                $"[IAP] Purchases fetch failed: {failure}"
+            );
+        }
 
         private void OnPurchasePending(
             PendingOrder order)
@@ -162,23 +201,35 @@ namespace MiniFactory.IAP
                     item.Product.definition.id;
 
                 Debug.Log(
-                    $"[IAP] Purchase succeeded: " +
-                    $"{productId}"
+                    $"[IAP] Purchase succeeded: {productId}"
                 );
 
-                // GameController получает это событие
-                // и начисляет монеты.
                 PurchaseSucceeded?.Invoke(
                     productId
                 );
             }
 
-            // Подтверждаем покупку после выдачи награды.
             _storeController.ConfirmPurchase(
                 order
             );
         }
 
+        private void OnPurchaseConfirmed(
+            Order order)
+        {
+            Debug.Log(
+                "[IAP] Purchase confirmed successfully."
+            );
+        }
+
+        private void OnPurchaseDeferred(
+            DeferredOrder order)
+        {
+            Debug.LogWarning(
+                "[IAP] Purchase deferred. " +
+                "Waiting for store approval/payment."
+            );
+        }
 
         private void OnPurchaseFailed(
             FailedOrder order)
@@ -203,47 +254,13 @@ namespace MiniFactory.IAP
             );
         }
 
-
-        private void OnStoreDisconnected(
-            StoreConnectionFailureDescription failure)
-        {
-            IsInitialized = false;
-
-            HandleInitializationFailure(
-                failure.ToString()
-            );
-        }
-
-
-        private void OnProductsFetchFailed(
-            ProductFetchFailed failure)
-        {
-            IsInitialized = false;
-
-            HandleInitializationFailure(
-                failure.ToString()
-            );
-        }
-
-
-        private void OnPurchasesFetchFailed(
-            PurchasesFetchFailureDescription failure)
-        {
-            Debug.LogWarning(
-                $"[IAP] Purchases fetch failed: " +
-                $"{failure}"
-            );
-        }
-
-
         private void HandleInitializationFailure(
             string message)
         {
             IsInitialized = false;
 
             Debug.LogError(
-                $"[IAP] Initialization failed: " +
-                $"{message}"
+                $"[IAP] Initialization failed: {message}"
             );
 
             InitializationFailed?.Invoke(
